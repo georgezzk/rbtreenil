@@ -28,7 +28,7 @@ if(MSVC)
         $<$<CONFIG:Debug>:/DEBUG>
     )
     target_compile_options(${PROJECT_NAME} PRIVATE /W3 /wd4996)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(${PROJECT_NAME} PRIVATE 
         $<$<CONFIG:Release>:-O3>
         $<$<CONFIG:Release>:-march=native>
