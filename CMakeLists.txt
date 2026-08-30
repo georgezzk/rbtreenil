@@ -52,7 +52,6 @@ if(MSVC)
     )
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wno-deprecated-declarations)
 endif()
-endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
 )
