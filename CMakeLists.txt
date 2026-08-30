@@ -34,6 +34,24 @@ if(MSVC)
         $<$<CONFIG:Release>:/verbose:icf>
         $<$<CONFIG:Debug>:/DEBUG>
     )
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(${PROJECT_NAME} PRIVATE 
+        $<$<CONFIG:Release>:-O3>
+        $<$<CONFIG:Release>:-march=native>
+        $<$<CONFIG:Release>:-mavx2>
+        $<$<CONFIG:Release>:-flto>
+        $<$<CONFIG:Release>:-funroll-loops>
+        $<$<CONFIG:Debug>:-O0>
+        $<$<CONFIG:Debug>:-g>
+        $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+    )
+    target_link_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Release>:-flto>
+        $<$<CONFIG:Release>:-Wl,-O3>
+        $<$<CONFIG:Debug>:-g>
+    )
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wno-deprecated-declarations)
+endif()
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
