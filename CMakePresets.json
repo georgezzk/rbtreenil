@@ -1,0 +1,37 @@
+{
+  "version": 5,
+  "configurePresets": [
+    {
+      "name": "x64-Debug",
+      "displayName": "x64 Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug"
+      }
+    },
+    {
+      "name": "x64-Release",
+      "displayName": "x64 Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "23",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x64-Debug",
+      "configurePreset": "x64-Debug"
+    },
+    {
+      "name": "x64-Release",
+      "configurePreset": "x64-Release"
+    }
+  ]
+}
