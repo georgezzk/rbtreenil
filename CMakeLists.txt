@@ -34,6 +34,7 @@ if(MSVC)
         $<$<CONFIG:Release>:/verbose:icf>
         $<$<CONFIG:Debug>:/DEBUG>
     )
+    target_compile_options(${PROJECT_NAME} PRIVATE /W3 /wd4996)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(${PROJECT_NAME} PRIVATE 
         $<$<CONFIG:Release>:-O3>
@@ -61,7 +62,3 @@ target_link_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
 )
-
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W3 /wd4996)
-endif()
