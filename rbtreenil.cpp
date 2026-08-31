@@ -1,3 +1,4 @@
+#define RBDEBUG 114514
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -11,16 +12,66 @@ struct Node{
 	int v=0,c=1;
 	bool ir=true;
 };
+Node* NIL=new Node;
+Node* rooot=NIL;
 #ifdef RBDEBUG
 vector<Node*> pool;
+bool check_rbtree(Node* root){
+	if(root==NIL){
+		return true;
+	}
+	if(root->l!=NIL&&root->l->f!=root){
+		return false;
+	}
+	if(root->r!=NIL&&root->r->f!=root){
+		return false;
+	}
+	if(root->f!=NIL&&root->f->l!=root&&root->f->r!=root){
+		return false;
+	}
+	if(root->ir==true){
+		if(root->l!=NIL&&root->l->ir==true){
+			return false;
+		}
+		if(root->r!=NIL&&root->r->ir==true){
+			return false;
+		}
+	}
+	bool leftok=check_rbtree(root->l);
+	if(leftok==false){
+		return false;
+	}
+	bool rightok=check_rbtree(root->r);
+	if(rightok==false){
+		return false;
+	}
+	return true;
+}
+int blackheight(Node* root){
+	if(root==NIL){
+		return 1;
+	}
+	int leftbh=blackheight(root->l);
+	int rightbh=blackheight(root->r);
+	if(leftbh==-1||rightbh==-1){
+		return -1;
+	}
+	if(leftbh!=rightbh){
+		return -1;
+	}
+	if(root->ir==false){
+		return leftbh+1;
+	} else {
+		return leftbh;
+	}
+}
 #endif
-Node* NIL=new Node{NIL,NIL,NIL,0,false};
-Node* rooot=NIL;
 Node* maken(Node* f,int v,bool il=true){
 	Node* root=new Node;
 	root->ir=true;
 	root->f=f;
 	root->v=v;
+	root->c=1;
 	root->r=NIL;
 	root->l=NIL;
 	if(f!=NIL){
@@ -198,32 +249,7 @@ void deleterb(int v){
 			rooot=NIL;
 		}
 		delete root;
-	} else if(root->r!=NIL){
-		debt=root->r;
-		f=root->f;
-		if(root->f->l==root&&root!=rooot){
-			root->f->l=root->r;
-		} else if(root->f->r==root&&root!=rooot){
-			root->f->r=root->r;
-		} else{
-			rooot=root->r;
-		}
-		root->r->f=root->f;
-
-		delete root;
-	} else if(root->l!=NIL){
-		debt=root->l;
-		f=root->f;
-		if(root->f->l==root&&root!=rooot){
-			root->f->l=root->l;
-		} else if(root->f->r==root&&root!=rooot){
-			root->f->r=root->l;
-		} else{
-			rooot=root->l;
-		}
-		root->l->f=root->f;
-		delete root;
-	} else{
+	} else if(root->l!=NIL&&root->r!=NIL){
 		Node* min=root->r;
 		while(min->l!=NIL){
 			min=min->l;
@@ -248,6 +274,30 @@ void deleterb(int v){
 			min->r->f=min->f;
 		}
 		delete min;
+	} else if(root->r!=NIL){
+		debt=root->r;
+		f=root->f;
+		if(root->f->l==root&&root!=rooot){
+			root->f->l=root->r;
+		} else if(root->f->r==root&&root!=rooot){
+			root->f->r=root->r;
+		} else{
+			rooot=root->r;
+		}
+		root->r->f=root->f;
+		delete root;
+	} else if(root->l!=NIL){
+		debt=root->l;
+		f=root->f;
+		if(root->f->l==root&&root!=rooot){
+			root->f->l=root->l;
+		} else if(root->f->r==root&&root!=rooot){
+			root->f->r=root->l;
+		} else{
+			rooot=root->l;
+		}
+		root->l->f=root->f;
+		delete root;
 	}
 	if(shitcodermrf==true){
 		deletefixup(debt,f);
@@ -259,7 +309,13 @@ void inorder(Node* p) {
 	}
 	inorder(p->l);
 	for(int i=0;i<p->c;i++){
-		cout<<p->v<<" ";
+		cout<<p->v;
+		if(p->ir==true){
+			cout<<"R";
+		} else{
+			cout<<"B";
+		}
+		cout<<" ";
 	}
 	inorder(p->r);
 }
@@ -281,6 +337,9 @@ void clearrbpool(){
 }
 #endif
 int main(){
+	NIL=maken(NIL,0);
+	NIL->ir=false;
+	rooot=NIL;
 	int n;
 	cin>>n;
 	for(int i=0;i<n;i++){
@@ -288,6 +347,19 @@ int main(){
 		cin>>v;
 		insertrb(v);
 	}
+#ifdef RBDEBUG
+	if(check_rbtree(rooot)==false){
+		cout<<"rbtree invalid"<<endl;
+	} else{
+		cout<<"no panic"<<endl;
+	}
+	int bh=blackheight(rooot);
+	if(bh==-1){
+		cout<<"black height invalid"<<endl;
+	} else{
+		cout<<"no black panic"<<endl;
+	}
+#endif()
 	inorder(rooot);
 #ifdef RBDEBUG
 	clearrbpool();
