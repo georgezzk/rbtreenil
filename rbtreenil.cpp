@@ -4,16 +4,6 @@
 #include <string>
 #include <sstream>
 using namespace std;
-void panic(){
-	cout<<"panic"<<endl;
-	cout<<"panic"<<endl;
-	cout<<"panic"<<endl;
-	cout<<"panic"<<endl;
-	cout<<"panic"<<endl;
-}
-void scared(){
-	cout<<"scared"<<endl;
-}
 struct Node{
 	Node* f=nullptr;
 	Node* l=nullptr;
@@ -21,7 +11,9 @@ struct Node{
 	int v=0,c=1;
 	bool ir=true;
 };
+#ifdef RBDEBUG
 vector<Node*> pool;
+#endif
 Node* NIL=new Node{NIL,NIL,NIL,0,false};
 Node* rooot=NIL;
 Node* maken(Node* f,int v,bool il=true){
@@ -38,7 +30,9 @@ Node* maken(Node* f,int v,bool il=true){
 			f->r=root;
 		}
 	}
+#ifdef RBDEBUG
 	pool.push_back(root);
+#endif
 	return root;
 }
 Node* leftspin(Node* root){
@@ -68,6 +62,68 @@ Node* leftspin(Node* root){
 	}
 	return root->f;
 }
+Node* rightspin(Node* root){
+	if(root==NIL||root->l==NIL){
+		return NIL;
+	}
+	Node* temp=NIL;
+	if(root->l->r!=NIL){
+		temp=root->l->r;
+	}
+	if(root->f->l==root){
+		root->f->l=root->l;
+	}
+	if(root->f->r==root){
+		root->f->r=root->l;
+	}
+	root->l->r=root;
+	root->l->f=root->f;
+	root->f=root->l;
+	root->l=temp;
+	if(root->l!=NIL){
+		root->l->f=root;
+	}
+	if(root->f->f==NIL){
+		rooot=root->f;
+		root->f->ir=false;
+	}
+	return root->f;
+}
+void insertfixup(Node* root){
+	rooot->ir=false;
+	if(root->f->ir==false){
+		return;
+	}
+	if(root->f->f->l!=root->f&&root->f->f->l->ir==true){
+		root->f->f->l->ir=false;
+		root->f->ir=false;
+		root->f->f->ir=true;
+		insertfixup(root->f->f);
+		return;
+	}else if(root->f->f->r!=root->f&&root->f->f->r->ir==true){
+		root->f->f->r->ir=false;
+		root->f->ir=false;
+		root->f->f->ir=true;
+		insertfixup(root->f->f);
+		return;
+	}
+	if(root->f->f->l==root->f&&root->f->r==root){
+		root=root->f;
+		root=leftspin(root);
+	}else if(root->f->f->r==root->f&&root->f->l==root){
+		root=root->f;
+		root=rightspin(root);
+	}
+	if(root->f->f->l==root->f&&root->f->l==root){
+		root->f->ir=false;
+		root->f->f->ir=true;
+		rightspin(root->f->f);
+	}else if(root->f->f->r==root->f&&root->f->r==root){
+		root->f->ir=false;
+		root->f->f->ir=true;
+		leftspin(root->f->f);
+	}
+}
 void insertrb(int v){
 	if(rooot==NIL){
 		rooot=maken(NIL,v);
@@ -91,21 +147,121 @@ void insertrb(int v){
 		}
 	}
 	root=maken(f,v,il);
-	pool.push_back(root);
+	insertfixup(root);
+	rooot->ir=false;
+}
+Node* findrb(int v){
+	Node* root=rooot;
+	while(root!=NIL){
+		if(v<root->v){
+			root=root->l;
+		} else if(v>root->v){
+			root=root->r;
+		} else{
+			return root;
+		}
+	}
+	return NIL;
+}
+void deletefixup(Node* root,Node* f){
+	if(f==NIL){
+		return;
+	}
+	if(root==NIL){
+		if(f->l!=NIL){
+
+		}else if(f->r!=NIL){
+
+		}
+	}
+}
+void deleterb(int v){
+	Node* root=findrb(v);
+	if(root==NIL){
+		return;
+	}
+	if(root->c>1){
+		root->c--;
+		return;
+	}
+	bool shitcodermrf=!root->ir;
+	Node* debt=NIL;
+	Node* f=NIL;
+	if(root->l==NIL&&root->r==NIL){
+		debt=NIL;
+		f=root->f;
+		if(root->f->l==root&&root!=rooot){
+			root->f->l=NIL;
+		} else if(root->f->r==root&&root!=rooot){
+			root->f->r=NIL;
+		} else{
+			rooot=NIL;
+		}
+		delete root;
+	} else if(root->r!=NIL){
+		debt=root->r;
+		f=root->f;
+		if(root->f->l==root&&root!=rooot){
+			root->f->l=root->r;
+		} else if(root->f->r==root&&root!=rooot){
+			root->f->r=root->r;
+		} else{
+			rooot=root->r;
+		}
+		root->r->f=root->f;
+
+		delete root;
+	} else if(root->l!=NIL){
+		debt=root->l;
+		f=root->f;
+		if(root->f->l==root&&root!=rooot){
+			root->f->l=root->l;
+		} else if(root->f->r==root&&root!=rooot){
+			root->f->r=root->l;
+		} else{
+			rooot=root->l;
+		}
+		root->l->f=root->f;
+		delete root;
+	} else{
+		Node* min=root->r;
+		while(min->l!=NIL){
+			min=min->l;
+		}
+		root->v=min->v;
+		root->c=min->c;
+		shitcodermrf=!min->ir;
+		debt=min->r;
+		f=min->f;
+		if(min->r==NIL){
+			if(min->f->l==min){
+				min->f->l=NIL;
+			} else if(min->f->r==min){
+				min->f->r=NIL;
+			}
+		} else{
+			if(min->f->l==min){
+				min->f->l=min->r;
+			} else if(min->f->r==min){
+				min->f->r=min->r;
+			}
+			min->r->f=min->f;
+		}
+		delete min;
+	}
+	if(shitcodermrf==true){
+		deletefixup(debt,f);
+	}
 }
 void inorder(Node* p) {
 	if(p==NIL){
 		return;
 	}
 	inorder(p->l);
-	cout<<p->v<<" ";
-	inorder(p->r);
-}
-void clearrbpool(){
-	while(!pool.empty()){
-		delete(pool.at(0));
-		pool.erase(pool.begin());
+	for(int i=0;i<p->c;i++){
+		cout<<p->v<<" ";
 	}
+	inorder(p->r);
 }
 vector<string> splitstr(string str){
 	stringstream ss(str);
@@ -116,7 +272,24 @@ vector<string> splitstr(string str){
 	}
 	return arr;
 }
+#ifdef RBDEBUG
+void clearrbpool(){
+	while(!pool.empty()){
+		delete(pool.front());
+		pool.erase(pool.begin());
+	}
+}
+#endif
 int main(){
-	
+	int n;
+	cin>>n;
+	for(int i=0;i<n;i++){
+		int v;
+		cin>>v;
+		insertrb(v);
+	}
+	inorder(rooot);
+#ifdef RBDEBUG
 	clearrbpool();
+#endif
 }
