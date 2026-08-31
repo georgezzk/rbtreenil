@@ -160,10 +160,10 @@ void insertfixup(Node* root){
 	}
 	if(root->f->f->l==root->f&&root->f->r==root){
 		root=root->f;
-		root=leftspin(root);
+		leftspin(root);
 	}else if(root->f->f->r==root->f&&root->f->l==root){
 		root=root->f;
-		root=rightspin(root);
+		rightspin(root);
 	}
 	if(root->f->f->l==root->f&&root->f->l==root){
 		root->f->ir=false;
@@ -359,7 +359,7 @@ int main(){
 	} else{
 		cout<<"no black panic"<<endl;
 	}
-#endif()
+#endif
 	inorder(rooot);
 #ifdef RBDEBUG
 	clearrbpool();
