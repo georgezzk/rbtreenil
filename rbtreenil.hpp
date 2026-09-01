@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-template<typename T,typename cmpT=std::less<T>>
+template<typename T>
 class rbtreenil{
 private:
 	struct Node{
@@ -13,7 +13,7 @@ private:
 	};
 	Node* NIL=new Node;
 	Node* rooot=NIL;
-	cmpT cmp;
+	bool (*cmp)(const T&,const T&);
 	Node* maken(Node* f,T v,bool il=true){
 		Node* root=new Node;
 		root->ir=true;
@@ -201,8 +201,7 @@ private:
 		}
 		inorderrecur(p->r,res);
 	}
-public:
-	rbtreenil() {
+	void init(){
 		NIL->f=NIL;
 		NIL->l=NIL;
 		NIL->r=NIL;
@@ -210,6 +209,13 @@ public:
 		NIL->v=T{};
 		NIL->ir=false;
 		rooot=NIL;
+	}
+public:
+	rbtreenil():cmp([](const T& a,const T& b){return a<b;}){
+		init();
+	}
+	rbtreenil(bool (*cmp_func)(const T&,const T&)):cmp(cmp_func){
+		init();
 	}
 	~rbtreenil() {
 		destroyrb(rooot);
