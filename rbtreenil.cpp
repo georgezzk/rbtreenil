@@ -15,7 +15,6 @@ struct Node{
 Node* NIL=new Node;
 Node* rooot=NIL;
 #ifdef RBDEBUG
-vector<Node*> pool;
 bool check_rbtree(Node* root){
 	if(root==NIL){
 		return true;
@@ -81,9 +80,6 @@ Node* maken(Node* f,int v,bool il=true){
 			f->r=root;
 		}
 	}
-#ifdef RBDEBUG
-	pool.push_back(root);
-#endif
 	return root;
 }
 Node* leftspin(Node* root){
@@ -215,6 +211,11 @@ Node* findrb(int v){
 	return NIL;
 }
 void deletefixup(Node* root,Node* f,bool dil){
+	rooot->ir=false;
+	if(root!=NIL&&root->ir==true){
+		root->ir=false;
+		return;
+	}
 	if(f==NIL){
 		return;
 	}
@@ -227,6 +228,7 @@ void deletefixup(Node* root,Node* f,bool dil){
 		if(f->r->ir==false&&f->r->r->ir==false&&f->r->l->ir==false){
 			f->r->ir=true;
 			root=f;
+			dil=(f->f->l==f);
 			f=f->f;
 			deletefixup(root,f,dil);
 			return;
@@ -252,6 +254,7 @@ void deletefixup(Node* root,Node* f,bool dil){
 		if(f->l->ir==false&&f->l->r->ir==false&&f->l->l->ir==false){
 			f->l->ir=true;
 			root=f;
+			dil=(f->f->l==f);
 			f=f->f;
 			deletefixup(root,f,dil);
 			return;
@@ -279,9 +282,6 @@ void deleterb(int v){
 		root->c--;
 		return;
 	}
-#ifdef RBDEBUG
-	pool.erase(find(pool.begin(),pool.end(),root));
-#endif
 	bool db=!root->ir,dil=false;
 	Node* debt=NIL;
 	Node* f=NIL;
@@ -359,6 +359,7 @@ void deleterb(int v){
 	if(db==true){
 		deletefixup(debt,f,dil);
 	}
+	rooot->ir=false;
 }
 void inorder(Node* p) {
 	if(p==NIL){
@@ -385,14 +386,6 @@ vector<string> splitstr(string str){
 	}
 	return arr;
 }
-#ifdef RBDEBUG
-void clearrbpool(){
-	while(!pool.empty()){
-		delete(pool.front());
-		pool.erase(pool.begin());
-	}
-}
-#endif
 int main(){
 	NIL->f=NIL;
 	NIL->l=NIL;
@@ -429,6 +422,7 @@ int main(){
 		cin>>v;
 		deleterb(v);
 	}
+	inorder(rooot);
 #ifdef RBDEBUG
 	if(check_rbtree(rooot)==false){
 		cout<<"rbtree invalid"<<endl;
@@ -441,8 +435,5 @@ int main(){
 	} else{
 		cout<<"no black panic"<<endl;
 	}
-#endif
-#ifdef RBDEBUG
-	//clearrbpool();
 #endif
 }
