@@ -214,15 +214,59 @@ Node* findrb(int v){
 	}
 	return NIL;
 }
-void deletefixup(Node* root,Node* f){
+void deletefixup(Node* root,Node* f,bool dil){
 	if(f==NIL){
 		return;
 	}
-	if(root==NIL){
-		if(f->l!=NIL){
-
-		}else if(f->r!=NIL){
-
+	if(dil==true){
+		if(f->r->ir==true){
+			f->r->ir=false;
+			f->ir=true;
+			leftspin(f);
+		}
+		if(f->r->ir==false&&f->r->r->ir==false&&f->r->l->ir==false){
+			f->r->ir=true;
+			root=f;
+			f=f->f;
+			deletefixup(root,f,dil);
+			return;
+		}
+		if(f->r->ir==false&&f->r->r->ir==false){
+			f->r->l->ir=false;
+			f->r->ir=true;
+			rightspin(f->r);
+		}
+		if(f->r->ir==false&&f->r->r->ir==true){
+			f->r->ir=f->ir;
+			f->ir=false;
+			f->r->r->ir=false;
+			leftspin(f);
+			return;
+		}
+	} else{
+		if(f->l->ir==true){
+			f->l->ir=false;
+			f->ir=true;
+			rightspin(f);
+		}
+		if(f->l->ir==false&&f->l->r->ir==false&&f->l->l->ir==false){
+			f->l->ir=true;
+			root=f;
+			f=f->f;
+			deletefixup(root,f,dil);
+			return;
+		}
+		if(f->l->ir==false&&f->l->l->ir==false){
+			f->l->r->ir=false;
+			f->l->ir=true;
+			leftspin(f->l);
+		}
+		if(f->l->ir==false&&f->l->l->ir==true){
+			f->l->ir=f->ir;
+			f->ir=false;
+			f->l->l->ir=false;
+			rightspin(f);
+			return;
 		}
 	}
 }
@@ -235,7 +279,10 @@ void deleterb(int v){
 		root->c--;
 		return;
 	}
-	bool shitcodermrf=!root->ir;
+#ifdef RBDEBUG
+	pool.erase(find(pool.begin(),pool.end(),root));
+#endif
+	bool db=!root->ir,dil=false;
 	Node* debt=NIL;
 	Node* f=NIL;
 	if(root->l==NIL&&root->r==NIL){
@@ -243,8 +290,10 @@ void deleterb(int v){
 		f=root->f;
 		if(root->f->l==root&&root!=rooot){
 			root->f->l=NIL;
+			dil=true;
 		} else if(root->f->r==root&&root!=rooot){
 			root->f->r=NIL;
+			dil=false;
 		} else{
 			rooot=NIL;
 		}
@@ -256,20 +305,24 @@ void deleterb(int v){
 		}
 		root->v=min->v;
 		root->c=min->c;
-		shitcodermrf=!min->ir;
+		db=!min->ir;
 		debt=min->r;
 		f=min->f;
 		if(min->r==NIL){
 			if(min->f->l==min){
 				min->f->l=NIL;
+				dil=true;
 			} else if(min->f->r==min){
 				min->f->r=NIL;
+				dil=false;
 			}
 		} else{
 			if(min->f->l==min){
 				min->f->l=min->r;
+				dil=true;
 			} else if(min->f->r==min){
 				min->f->r=min->r;
+				dil=false;
 			}
 			min->r->f=min->f;
 		}
@@ -279,8 +332,10 @@ void deleterb(int v){
 		f=root->f;
 		if(root->f->l==root&&root!=rooot){
 			root->f->l=root->r;
+			dil=true;
 		} else if(root->f->r==root&&root!=rooot){
 			root->f->r=root->r;
+			dil=false;
 		} else{
 			rooot=root->r;
 		}
@@ -291,16 +346,18 @@ void deleterb(int v){
 		f=root->f;
 		if(root->f->l==root&&root!=rooot){
 			root->f->l=root->l;
+			dil=true;
 		} else if(root->f->r==root&&root!=rooot){
 			root->f->r=root->l;
+			dil=false;
 		} else{
 			rooot=root->l;
 		}
 		root->l->f=root->f;
 		delete root;
 	}
-	if(shitcodermrf==true){
-		deletefixup(debt,f);
+	if(db==true){
+		deletefixup(debt,f,dil);
 	}
 }
 void inorder(Node* p) {
@@ -337,7 +394,11 @@ void clearrbpool(){
 }
 #endif
 int main(){
-	NIL=maken(NIL,0);
+	NIL->f=NIL;
+	NIL->l=NIL;
+	NIL->r=NIL;
+	NIL->c=0;
+	NIL->v=0;
 	NIL->ir=false;
 	rooot=NIL;
 	int n;
@@ -361,7 +422,27 @@ int main(){
 	}
 #endif
 	inorder(rooot);
+	cout<<endl;
+	cin>>n;
+	for(int i=0;i<n;i++){
+		int v;
+		cin>>v;
+		deleterb(v);
+	}
 #ifdef RBDEBUG
-	clearrbpool();
+	if(check_rbtree(rooot)==false){
+		cout<<"rbtree invalid"<<endl;
+	} else{
+		cout<<"no panic"<<endl;
+	}
+	bh=blackheight(rooot);
+	if(bh==-1){
+		cout<<"black height invalid"<<endl;
+	} else{
+		cout<<"no black panic"<<endl;
+	}
+#endif
+#ifdef RBDEBUG
+	//clearrbpool();
 #endif
 }
