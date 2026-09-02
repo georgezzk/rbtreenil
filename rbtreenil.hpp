@@ -13,7 +13,7 @@ private:
 	};
 	Node* NIL=new Node;
 	Node* rooot=NIL;
-	bool (*cmp)(const T&,const T&);
+	bool (*cmp)(const T,const T);
 	Node* maken(Node* f,T v,bool il=true){
 		Node* root=new Node;
 		root->ir=true;
@@ -211,10 +211,10 @@ private:
 		rooot=NIL;
 	}
 public:
-	rbtreenil():cmp([](const T& a,const T& b){return a<b;}){
+	rbtreenil():cmp([](const T a,const T b){return a<b;}){
 		init();
 	}
-	rbtreenil(bool (*cmp_func)(const T&,const T&)):cmp(cmp_func){
+	rbtreenil(bool (*cmp_func)(const T,const T)):cmp(cmp_func){
 		init();
 	}
 	~rbtreenil() {
