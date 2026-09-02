@@ -8,7 +8,7 @@ int main() {
     tree.insertrb(7);
     tree.insertrb(1);
     tree.insertrb(9);
-    auto v=tree.inorder();
+    auto v=tree.inorderrb();
     for(int x:v) {
         cout<<x<<" ";
     }
@@ -16,8 +16,9 @@ int main() {
     if(tree.findrb(5)!=nullptr) {
         cout<<"found 5"<<endl;
     }
-    tree.deleterb(3);
-    v=tree.inorder();
+    rbtreenil<int> treee=tree.clonerb();
+    treee.deleterb(3);
+    v=treee.inorderrb();
     for(int x:v) {
         cout<<x<<" ";
     }

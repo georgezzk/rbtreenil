@@ -210,6 +210,33 @@ private:
 		NIL->ir=false;
 		rooot=NIL;
 	}
+	Node* findrbi(T v){
+		Node* root=rooot;
+		while(root!=NIL){
+			if(cmp(v,root->v)){
+				root=root->l;
+			} else if(cmp(root->v,v)){
+				root=root->r;
+			} else{
+				return root;
+			}
+		}
+		return NIL;
+	}
+	Node* clonerbrecur(Node* root,Node* f,Node* NNIL) const{
+		if(root==NIL){
+			return NNIL;
+		}
+		Node* nroot=new Node{f,NNIL,NNIL,root->v,root->c,root->ir};
+		nroot->l=clonerbrecur(root->l,nroot,NNIL);
+		nroot->r=clonerbrecur(root->r,nroot,NNIL);
+		return nroot;
+	}
+	rbtreenil<T> clonerbi(){
+		rbtreenil<T> ntree(cmp);
+		ntree.rooot=clonerbrecur(rooot,ntree.NIL,ntree.NIL);
+		return ntree;
+	}
 public:
 	rbtreenil():cmp([](const T a,const T b){return a<b;}){
 		init();
@@ -221,11 +248,36 @@ public:
 		destroyrb(rooot);
 		delete NIL;
 	}
-	void insertrb(T v){
+	rbtreenil(const rbtreenil& o):cmp(o.cmp){
+		init();
+		rooot=o.clonerbrecur(o.rooot,NIL,NIL);
+	}
+	rbtreenil& operator=(const rbtreenil& o){
+		if(this!=&o){
+			destroyrb(rooot);
+			rooot=o.clonerbrecur(o.rooot,NIL,NIL);
+			cmp=o.cmp;
+		}
+		return *this;
+	}
+	Node* root(){
+		if(rooot==NIL){
+			return nullptr;
+		}
+		return rooot;
+	}
+	Node* findrb(T v){
+		Node* res=findrbi(v);
+		if(res==NIL){
+			return nullptr;
+		}
+		return res;
+	}
+	bool insertrb(T v){
 		if(rooot==NIL){
 			rooot=maken(NIL,v);
 			rooot->ir=false;
-			return;
+			return true;
 		}
 		Node* root=rooot;
 		Node* f=root;
@@ -240,47 +292,22 @@ public:
 				il=false;
 			} else{
 				root->c++;
-				return;
+				return false;
 			}
 		}
 		root=maken(f,v,il);
 		insertfixup(root);
 		rooot->ir=false;
+		return true;
 	}
-	Node* findrb(T v){
-		Node* root=rooot;
-		while(root!=NIL){
-			if(cmp(v,root->v)){
-				root=root->l;
-			} else if(cmp(root->v,v)){
-				root=root->r;
-			} else{
-				return root;
-			}
-		}
-		return NIL;
-	}
-	bool containesrb(T v){
-		Node* root=rooot;
-		while(root!=NIL){
-			if(cmp(v,root->v)){
-				root=root->l;
-			} else if(cmp(root->v,v)){
-				root=root->r;
-			} else{
-				return true;
-			}
-		}
-		return false;
-	}
-	void deleterb(T v){
-		Node* root=findrb(v);
+	bool deleterb(T v){
+		Node* root=findrbi(v);
 		if(root==NIL){
-			return;
+			return false;
 		}
 		if(root->c>1){
 			root->c--;
-			return;
+			return true;
 		}
 		bool db=!root->ir,dil=false;
 		Node* debt=NIL;
@@ -360,8 +387,12 @@ public:
 			deletefixup(debt,f,dil);
 		}
 		rooot->ir=false;
+		return true;
 	}
-	std::vector<T> inorder() {
+	rbtreenil<T> clonerb(){
+		return clonerbi();
+	}
+	std::vector<T> inorderrb() {
 		std::vector<T> res;
 		inorderrecur(rooot,res);
 		return res;
