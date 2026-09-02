@@ -12,6 +12,33 @@
 #include <vector>
 using namespace std;
 
+// ---------- self-contained allocation tracker (leak + double-free, no tools) ----------
+#include <atomic>
+#include <cstdlib>
+#include <new>
+static std::atomic<long long> g_live{0}, g_new{0}, g_del{0};
+static long long g_base=0;
+static void* trk_alloc(size_t n){ void* p=std::malloc(n?n:1); if(p) g_live++; g_new++; return p; }
+static void  trk_free(void* p){ if(p){ g_live--; g_del++; std::free(p);} }  // delete(nullptr) is a no-op
+void* operator new(size_t n){ return trk_alloc(n); }
+void* operator new[](size_t n){ return trk_alloc(n); }
+void* operator new(size_t n,const std::nothrow_t&) noexcept{ return trk_alloc(n); }
+void* operator new[](size_t n,const std::nothrow_t&) noexcept{ return trk_alloc(n); }
+void  operator delete(void* p) noexcept{ trk_free(p); }
+void  operator delete(void* p,size_t) noexcept{ trk_free(p); }
+void  operator delete[](void* p) noexcept{ trk_free(p); }
+void  operator delete[](void* p,size_t) noexcept{ trk_free(p); }
+void  operator delete(void* p,const std::nothrow_t&) noexcept{ trk_free(p); }
+void  operator delete[](void* p,const std::nothrow_t&) noexcept{ trk_free(p); }
+struct LeakReport{
+    ~LeakReport(){
+        long long net=g_live-g_base;
+        fprintf(stderr,"\n[leakcheck] base=%lld live=%lld net=%lld allocs=%lld frees=%lld -> %s\n",
+            g_base,g_live.load(),net,g_new.load(),g_del.load(),
+            net==0?"NO LEAK":(net>0?"*** LEAK ***":"*** OVER-FREE (double free / mismatched delete) ***"));
+    }
+} g_leakreport;
+
 static bool lt_int(const int a,const int b){return a<b;}
 static bool gt_int(const int a,const int b){return a>b;}
 
@@ -126,6 +153,19 @@ int main(int argc,char** argv){
     unsigned seed=argc>2?stoul(argv[2]):1u;
     int trials=argc>3?stoi(argv[3]):200;
     mt19937 rng(seed);
+
+    // warmup: settle lazy CRT/stdio allocations, then snapshot the live baseline
+    { rbtreenil<int> w; w.insertrb(1); w.insertrb(2); w.insertrb(2); w.deleterb(2); (void)w.inorderrb(); }
+    fprintf(stderr,"");
+    g_base=g_live;
+
+    if(mode=="selfleak"){
+        // negative control: leak on purpose, LeakReport must flip to *** LEAK ***
+        for(int i=0;i<5;i++){ int* p=new int(i); (void)p; }          // leak 5 ints
+        rbtreenil<int>* t=new rbtreenil<int>(); t->insertrb(9);      // leak a tree
+        printf("selfleak: intentionally leaked 6 objects\n");
+        return 0;                                                     // dtor prints net=+6 expected
+    }
 
     if(mode=="insert"){
         int bad=0;
