@@ -432,14 +432,6 @@ public:
 		rooot->ir=false;
 		return true;
 	}
-	rbtreenil<T> clonerb(){
-		return clonerbi();
-	}
-	std::vector<T> inorderrb() {
-		std::vector<T> res;
-		inorderrecur(rooot,res);
-		return res;
-	}
 	bool deleterbram(T v){
 		Node* root=findrbi(v);
 		if(root==NIL){
@@ -528,5 +520,13 @@ public:
 		}
 		rooot->ir=false;
 		return true;
+	}
+	rbtreenil<T> clonerb(){
+		return clonerbi();
+	}
+	std::vector<T> inorderrb() {
+		std::vector<T> res;
+		inorderrecur(rooot,res);
+		return res;
 	}
 };
