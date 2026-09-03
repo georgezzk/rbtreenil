@@ -1,7 +1,7 @@
 // class_stress.cpp — stress test for every public method of rbtreenil<T>.
 // Build: clang++ -std=c++23 -O1 -g -static class_stress.cpp -o class_stress.exe
 // Run one case per process: class_stress.exe <case> [seed] [trials]
-// Cases: insert delete dupcount clone copy cmp find structure
+// Cases: insert delete dupcount clone cloneedge clonehard copy move destruct cmp find structure
 #include "rbtreenil.hpp"
 #include <algorithm>
 #include <cstdio>
@@ -9,6 +9,7 @@
 #include <map>
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 using namespace std;
 
@@ -281,6 +282,113 @@ int main(int argc,char** argv){
             if(!oracle_ok(a,acnt)){ bad++; printf("copy A-DTOR t=%d\n",t); return 1; }
         }
         printf("copy: %d/%d bad\n",bad,trials); return bad?1:0;
+    }
+
+    if(mode=="move"){
+        int bad=0;
+        for(int t=0;t<trials;t++){
+            rbtreenil<int> a;
+            map<int,int> acnt;
+            int n=1+(rng()%30);
+            uniform_int_distribution<int> vd(0,40);
+            for(int i=0;i<n;i++){ int x=vd(rng); a.insertrb(x); acnt[x]++; }
+            rbtreenil<int> b=std::move(a);        // move constructor
+            if(!oracle_ok(b,acnt)||!check_rb(&b)){ bad++; printf("move CTOR t=%d\n",t); return 1; }
+            if(!a.inorderrb().empty()||a.root()!=nullptr){ bad++; printf("move SRC-NOT-EMPTY t=%d\n",t); return 1; }
+            if(!disjoint(&a,&b)){ bad++; printf("move ALIAS t=%d\n",t); return 1; } // a is fresh-empty, b owns tree -> disjoint
+            rbtreenil<int> c;                     // move assignment into empty c
+            c=std::move(b);
+            if(!oracle_ok(c,acnt)||!check_rb(&c)){ bad++; printf("move ASSIGN t=%d\n",t); return 1; }
+            if(!b.inorderrb().empty()||b.root()!=nullptr){ bad++; printf("move SRC2-NOT-EMPTY t=%d\n",t); return 1; }
+            c=std::move(c);                        // self-move guard: no-op, must stay valid
+            if(!oracle_ok(c,acnt)||!check_rb(&c)){ bad++; printf("move SELF t=%d\n",t); return 1; }
+            // move-assign over a NON-empty target
+            rbtreenil<int> d; for(int i=0;i<5;i++) d.insertrb(i*7);
+            d=std::move(c); map<int,int> dcnt=acnt;
+            if(!oracle_ok(d,dcnt)||!check_rb(&d)){ bad++; printf("move OVER t=%d\n",t); return 1; }
+            if(!c.inorderrb().empty()){ bad++; printf("move OVER-SRC t=%d\n",t); return 1; }
+            // destructors for a,b,c,d run at scope end -> leak tracker proves no double/free
+        }
+        printf("move: %d/%d bad\n",bad,trials); return bad?1:0;
+    }
+
+    if(mode=="destruct"){
+        int bad=0;
+        uniform_int_distribution<int> vd(0,60);
+        auto delta_zero=[&](function<void(rbtreenil<int>&)> build,const char* tag){
+            long long before=g_live;
+            { rbtreenil<int> tr; build(tr); (void)tr.inorderrb(); }  // tr destroyed here
+            long long d=g_live-before;
+            if(d!=0){ bad++; printf("destruct %s: live delta=%lld (dtor %s)\n",tag,d,d>0?"LEAKED":"OVER-FREED"); }
+        };
+        for(int t=0;t<trials;t++){
+            delta_zero([](rbtreenil<int>&){},"EMPTY");
+            delta_zero([](rbtreenil<int>& tr){ tr.insertrb(5); },"SINGLE");
+            delta_zero([](rbtreenil<int>& tr){ for(int i=0;i<9;i++) tr.insertrb(3); },"DUP");
+            delta_zero([](rbtreenil<int>& tr){ for(int i=0;i<40;i++) tr.insertrb(i); },"ASC");
+            delta_zero([](rbtreenil<int>& tr){ for(int i=0;i<40;i++) tr.insertrb(40-i); },"DESC");
+            delta_zero([&](rbtreenil<int>& tr){ int n=1+(rng()%60); for(int i=0;i<n;i++) tr.insertrb(vd(rng)); },"RAND");
+            // heavy insert-then-delete: orphan nodes the dtor would miss become a leak
+            delta_zero([&](rbtreenil<int>& tr){
+                vector<int> ins; int n=1+(rng()%50);
+                for(int i=0;i<n;i++){ int x=vd(rng); tr.insertrb(x); ins.push_back(x); }
+                shuffle(ins.begin(),ins.end(),rng);
+                for(int x:ins) if(rng()%2) tr.deleterb(x);
+            },"MUTATED");
+        }
+        printf("destruct: %d bad\n",bad); return bad?1:0;
+    }
+
+    if(mode=="ram"){
+        // Verify _ram methods TRUTHFULLY report memory alloc/free, cross-checked
+        // against the live-allocation counter (ground truth) AND a count oracle.
+        int bad=0;
+        long long ins_new=0, ins_dup=0, del_free=0, del_dec=0, del_absent=0;
+        uniform_int_distribution<int> vd(0,25);
+        for(int t=0;t<trials;t++){
+            rbtreenil<int> tr;
+            map<int,int> cnt;
+            int ops=1+(rng()%80);
+            for(int i=0;i<ops;i++){
+                bool do_ins = cnt.empty() || (rng()%2);
+                int x=vd(rng);
+                if(do_ins){
+                    long long before=g_live;
+                    bool ret=tr.insertrbram(x);
+                    long long delta=g_live-before;
+                    bool was_present=(cnt[x]>0);
+                    bool really_alloc = (delta==1);
+                    bool expect = !was_present;              // new key -> node allocated
+                    if(delta!=0 && delta!=1){ bad++; printf("ram INS weird delta=%lld t=%d x=%d\n",delta,t,x); return 1; }
+                    if(ret!=really_alloc || ret!=expect){
+                        bad++; printf("ram INS MISMATCH t=%d x=%d ret=%d allocd=%d(δ=%lld) expect=%d\n",
+                            t,x,(int)ret,(int)really_alloc,delta,(int)expect); return 1;
+                    }
+                    if(ret) ins_new++; else ins_dup++;
+                    cnt[x]++;
+                } else {
+                    long long before=g_live;
+                    bool ret=tr.deleterbram(x);
+                    long long delta=g_live-before;
+                    bool last_copy = (cnt[x]==1);            // removing it frees the node
+                    bool really_free = (delta==-1);
+                    bool expect = last_copy;
+                    if(delta!=0 && delta!=-1){ bad++; printf("ram DEL weird delta=%lld t=%d x=%d\n",delta,t,x); return 1; }
+                    if(ret!=really_free || ret!=expect){
+                        bad++; printf("ram DEL MISMATCH t=%d x=%d ret=%d freed=%d(δ=%lld) expect=%d\n",
+                            t,x,(int)ret,(int)really_free,delta,(int)expect); return 1;
+                    }
+                    if(ret) del_free++;
+                    else if(cnt[x]>1) del_dec++;
+                    else if(cnt[x]==0) del_absent++;
+                    else del_dec++;                          // cnt[x]==1 shouldn't reach here (ret would be true)
+                    if(cnt[x]>0){ cnt[x]--; if(!cnt[x]) cnt.erase(x); }
+                }
+                if(!oracle_ok(tr,cnt)){ bad++; printf("ram CONTENT t=%d i=%d\n",t,i); return 1; }
+            }
+        }
+        printf("ram: %d/%d bad | ins_new=%lld ins_dup=%lld del_free=%lld del_dec=%lld del_absent=%lld\n",
+            bad,trials,ins_new,ins_dup,del_free,del_dec,del_absent); return bad?1:0;
     }
 
     if(mode=="cmp"){
