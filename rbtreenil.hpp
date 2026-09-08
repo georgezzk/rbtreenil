@@ -211,10 +211,9 @@ private:
 		if(p==NIL){
 			return;
 		}
-		inorderrecur(p->l,res);
+		inorderrecurc(p->l,res);
 		res.emplace_back(p->v,p->c);
-		res.push_back();
-		inorderrecur(p->r,res);
+		inorderrecurc(p->r,res);
 	}
 	void init(){
 		NIL->f=NIL;
@@ -542,6 +541,11 @@ public:
 	std::vector<T> inorderrb() {
 		std::vector<T> res;
 		inorderrecur(rooot,res);
+		return res;
+	}
+	std::vector<inorderc> inorderrbc() {
+		std::vector<inorderc> res;
+		inorderrecurc(rooot,res);
 		return res;
 	}
 };
