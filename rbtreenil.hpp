@@ -2,7 +2,7 @@
 #include <vector>
 template<typename T>
 class rbtreenil{
-private:
+public:
 	struct Node{
 		Node* f=nullptr;
 		Node* l=nullptr;
@@ -11,6 +11,7 @@ private:
 		int c=1;
 		bool ir=true;
 	};
+private:
 	Node* NIL=new Node;
 	Node* rooot=NIL;
 	bool (*cmp)(const T,const T);
