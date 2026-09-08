@@ -535,6 +535,94 @@ public:
 		rooot->ir=false;
 		return true;
 	}
+	bool deleterbramn(Node* root){
+		if(root==NIL){
+			return false;
+		}
+		if(root->c>1){
+			root->c--;
+			return false;
+		}
+		bool db=!root->ir,dil=false;
+		Node* debt=NIL;
+		Node* f=NIL;
+		if(root->l==NIL&&root->r==NIL){
+			debt=NIL;
+			f=root->f;
+			if(root->f->l==root&&root!=rooot){
+				root->f->l=NIL;
+				dil=true;
+			} else if(root->f->r==root&&root!=rooot){
+				root->f->r=NIL;
+				dil=false;
+			} else{
+				rooot=NIL;
+			}
+			delete root;
+		} else if(root->l!=NIL&&root->r!=NIL){
+			Node* min=root->r;
+			while(min->l!=NIL){
+				min=min->l;
+			}
+			root->v=min->v;
+			root->c=min->c;
+			db=!min->ir;
+			debt=min->r;
+			f=min->f;
+			if(min->r==NIL){
+				if(min->f->l==min){
+					min->f->l=NIL;
+					dil=true;
+				} else if(min->f->r==min){
+					min->f->r=NIL;
+					dil=false;
+				}
+			} else{
+				if(min->f->l==min){
+					min->f->l=min->r;
+					dil=true;
+				} else if(min->f->r==min){
+					min->f->r=min->r;
+					dil=false;
+				}
+				min->r->f=min->f;
+			}
+			delete min;
+		} else if(root->r!=NIL){
+			debt=root->r;
+			f=root->f;
+			if(root->f->l==root&&root!=rooot){
+				root->f->l=root->r;
+				dil=true;
+			} else if(root->f->r==root&&root!=rooot){
+				root->f->r=root->r;
+				dil=false;
+			} else{
+				rooot=root->r;
+			}
+			root->r->f=root->f;
+			delete root;
+		} else if(root->l!=NIL){
+			debt=root->l;
+			f=root->f;
+			if(root->f->l==root&&root!=rooot){
+				root->f->l=root->l;
+				dil=true;
+			} else if(root->f->r==root&&root!=rooot){
+				root->f->r=root->l;
+				dil=false;
+			} else{
+				rooot=root->l;
+			}
+			root->l->f=root->f;
+			delete root;
+		}
+		if(db==true){
+			deletefixup(debt,f,dil);
+		}
+		rooot->ir=false;
+		return true;
+	}
 	rbtreenil<T> clonerb(){
 		return clonerbi();
 	}
