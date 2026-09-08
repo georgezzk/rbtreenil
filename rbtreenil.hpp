@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <cstdint>
 template<typename T>
 class rbtreenil{
 public:
@@ -8,19 +9,23 @@ public:
 		Node* l=nullptr;
 		Node* r=nullptr;
 		T v{};
-		int c=1;
+		uint64_t c=1;
 		bool ir=true;
+	};
+	struct inorderc{
+		T v;
+		uint64_t c;
 	};
 private:
 	Node* NIL=new Node;
 	Node* rooot=NIL;
 	bool (*cmp)(const T,const T);
-	Node* maken(Node* f,T v,int cnt=1,bool il=true){
+	Node* maken(Node* f,T v,uint64_t c=1,bool il=true){
 		Node* root=new Node;
 		root->ir=true;
 		root->f=f;
 		root->v=v;
-		root->c=cnt;
+		root->c=c;
 		root->r=NIL;
 		root->l=NIL;
 		if(f!=NIL){
@@ -202,6 +207,15 @@ private:
 		}
 		inorderrecur(p->r,res);
 	}
+	void inorderrecurc(Node* p,std::vector<inorderc>& res) {
+		if(p==NIL){
+			return;
+		}
+		inorderrecur(p->l,res);
+		res.emplace_back(p->v,p->c);
+		res.push_back();
+		inorderrecur(p->r,res);
+	}
 	void init(){
 		NIL->f=NIL;
 		NIL->l=NIL;
@@ -290,7 +304,7 @@ public:
 		}
 		return res;
 	}
-	Node* insertrb(T v,int c=1){
+	Node* insertrb(T v,uint64_t c=1){
 		if(rooot==NIL){
 			rooot=maken(NIL,v,c);
 			rooot->ir=false;
@@ -317,7 +331,7 @@ public:
 		rooot->ir=false;
 		return root;
 	}
-	bool insertrbram(T v,int c=1){
+	bool insertrbram(T v,uint64_t c=1){
 		if(rooot==NIL){
 			rooot=maken(NIL,v,c);
 			rooot->ir=false;
