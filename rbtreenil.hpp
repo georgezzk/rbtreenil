@@ -14,12 +14,12 @@ private:
 	Node* NIL=new Node;
 	Node* rooot=NIL;
 	bool (*cmp)(const T,const T);
-	Node* maken(Node* f,T v,bool il=true){
+	Node* maken(Node* f,T v,int cnt=1,bool il=true){
 		Node* root=new Node;
 		root->ir=true;
 		root->f=f;
 		root->v=v;
-		root->c=1;
+		root->c=cnt;
 		root->r=NIL;
 		root->l=NIL;
 		if(f!=NIL){
@@ -289,9 +289,9 @@ public:
 		}
 		return res;
 	}
-	Node* insertrb(T v){
+	Node* insertrb(T v,int c=1){
 		if(rooot==NIL){
-			rooot=maken(NIL,v);
+			rooot=maken(NIL,v,c);
 			rooot->ir=false;
 			return rooot;
 		}
@@ -307,18 +307,18 @@ public:
 				root=root->r;
 				il=false;
 			} else{
-				root->c++;
+				root->c+=c;
 				return root;
 			}
 		}
-		root=maken(f,v,il);
+		root=maken(f,v,c,il);
 		insertfixup(root);
 		rooot->ir=false;
 		return root;
 	}
-	bool insertrbram(T v){
+	bool insertrbram(T v,int c=1){
 		if(rooot==NIL){
-			rooot=maken(NIL,v);
+			rooot=maken(NIL,v,c);
 			rooot->ir=false;
 			return true;
 		}
@@ -334,11 +334,11 @@ public:
 				root=root->r;
 				il=false;
 			} else{
-				root->c++;
+				root->c+=c;
 				return false;
 			}
 		}
-		root=maken(f,v,il);
+		root=maken(f,v,c,il);
 		insertfixup(root);
 		rooot->ir=false;
 		return true;
