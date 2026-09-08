@@ -202,7 +202,7 @@ private:
 			return;
 		}
 		inorderrecur(p->l,res);
-		for(int i=0;i<p->c;i++) {
+		for(uint64_t i=0;i<p->c;i++) {
 			res.push_back(p->v);
 		}
 		inorderrecur(p->r,res);
