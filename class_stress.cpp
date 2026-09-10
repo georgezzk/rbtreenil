@@ -68,7 +68,7 @@ static bool oracle_ok_desc(rbtreenil<int>& t,const map<int,int>& cnt){
 template<class Tree>
 static bool check_rb(Tree* tree){
     auto* r=tree->root();
-    if(r==nullptr) return true;
+    if(r==tree->NIL) return true;
     using P=decltype(r);
     auto isNIL=[&](P p){return p->l==p && p->r==p;};
     if(!isNIL(r->f)) return false;              // root's parent must be the sentinel
@@ -119,7 +119,7 @@ static bool struct_equal(Tree* a,Tree* b){
             && eq(x->l,y->l) && eq(x->r,y->r);
     };
     auto* ra=a->root(); auto* rb=b->root();
-    if(!ra||!rb) return ra==nullptr && rb==nullptr;
+    if(ra==a->NIL||rb==b->NIL) return ra==a->NIL && rb==b->NIL;
     return eq(ra,rb);
 }
 
@@ -140,7 +140,7 @@ static bool disjoint(Tree* a,Tree* b){
             if(!isNIL(p->r)) dfs(p->r);
         };
         auto* r=t->root();
-        if(r) dfs(r);
+        if(r!=t->NIL) dfs(r);
         return s;
     };
     vector<P> sa=collect(a), sb=collect(b);
@@ -294,12 +294,12 @@ int main(int argc,char** argv){
             for(int i=0;i<n;i++){ int x=vd(rng); a.insertrb(x); acnt[x]++; }
             rbtreenil<int> b=std::move(a);        // move constructor
             if(!oracle_ok(b,acnt)||!check_rb(&b)){ bad++; printf("move CTOR t=%d\n",t); return 1; }
-            if(!a.inorderrb().empty()||a.root()!=nullptr){ bad++; printf("move SRC-NOT-EMPTY t=%d\n",t); return 1; }
+            if(!a.inorderrb().empty()||a.root()!=a.NIL){ bad++; printf("move SRC-NOT-EMPTY t=%d\n",t); return 1; }
             if(!disjoint(&a,&b)){ bad++; printf("move ALIAS t=%d\n",t); return 1; } // a is fresh-empty, b owns tree -> disjoint
             rbtreenil<int> c;                     // move assignment into empty c
             c=std::move(b);
             if(!oracle_ok(c,acnt)||!check_rb(&c)){ bad++; printf("move ASSIGN t=%d\n",t); return 1; }
-            if(!b.inorderrb().empty()||b.root()!=nullptr){ bad++; printf("move SRC2-NOT-EMPTY t=%d\n",t); return 1; }
+            if(!b.inorderrb().empty()||b.root()!=b.NIL){ bad++; printf("move SRC2-NOT-EMPTY t=%d\n",t); return 1; }
             c=std::move(c);                        // self-move guard: no-op, must stay valid
             if(!oracle_ok(c,acnt)||!check_rb(&c)){ bad++; printf("move SELF t=%d\n",t); return 1; }
             // move-assign over a NON-empty target
@@ -403,7 +403,7 @@ int main(int argc,char** argv){
             if(!check_rb(&tr)){ bad++; printf("cmp STRUCT FAIL t=%d\n",t); }
             // find must respect the same order
             vector<int> keys; for(auto&[k,_]:cnt) keys.push_back(k);
-            for(int x:keys) if(tr.findrb(x)==nullptr){ bad++; printf("cmp FIND FAIL t=%d x=%d\n",t,x); }
+            for(int x:keys) if(tr.findrb(x)==tr.NIL){ bad++; printf("cmp FIND FAIL t=%d x=%d\n",t,x); }
         }
         printf("cmp: %d/%d bad\n",bad,trials); return bad?1:0;
     }
@@ -417,11 +417,50 @@ int main(int argc,char** argv){
             for(int i=0;i<25;i++){ int x=vd(rng); tr.insertrb(x); cnt[x]++; }
             for(int x=0;x<60;x++){
                 bool want=cnt[x]>0;
-                bool got=tr.findrb(x)!=nullptr;
+                bool got=tr.findrb(x)!=tr.NIL;
                 if(want!=got){ bad++; printf("find FAIL x=%d want=%d got=%d\n",x,(int)want,(int)got); }
             }
         }
         printf("find: %d/%d bad\n",bad,trials); return bad?1:0;
+    }
+
+    if(mode=="findnil"){
+        int bad=0;
+        uniform_int_distribution<int> vd(0,40);
+        for(int t=0;t<trials;t++){
+            rbtreenil<int> tr;
+            map<int,int> cnt;
+            // (a) empty tree: root()==NIL, every find==NIL, and NEVER nullptr
+            if(tr.root()!=tr.NIL){ bad++; printf("findnil ROOT t=%d\n",t); }
+            for(int x=0;x<50;x++) if(tr.findrb(x)!=tr.NIL){ bad++; printf("findnil EMPTY-FIND t=%d x=%d\n",t,x); }
+            for(int x=0;x<50;x++) if(tr.findrb(x)==nullptr){ bad++; printf("findnil GOT-NULL t=%d x=%d\n",t,x); }
+            // (b) NIL canonical invariants
+            if(!(tr.NIL->l==tr.NIL&&tr.NIL->r==tr.NIL&&tr.NIL->f==tr.NIL)) { bad++; printf("findnil NIL-LOOP t=%d\n",t); }
+            if(tr.NIL->c!=0||tr.NIL->ir!=false){ bad++; printf("findnil NIL-FIELDS t=%d\n",t); }
+            // (c) after inserts: hits return exact node with right v and c; misses return NIL
+            int n=1+(rng()%30);
+            for(int i=0;i<n;i++){ int x=vd(rng); tr.insertrb(x); cnt[x]++; }
+            if(tr.root()==tr.NIL||tr.root()==nullptr){ bad++; printf("findnil ROOT-NONEMPTY t=%d\n",t); }
+            for(int x=0;x<50;x++){
+                auto* p=tr.findrb(x);
+                if(p==nullptr){ bad++; printf("findnil NULL t=%d x=%d\n",t,x); break; }
+                if(cnt.count(x)){
+                    if(p==tr.NIL){ bad++; printf("findnil MISS t=%d x=%d\n",t,x); }
+                    else if(p->v!=x||p->c!=(uint64_t)cnt[x]){ bad++; printf("findnil WRONG t=%d x=%d v=%d c=%llu want=%d\n",t,x,p->v,(unsigned long long)p->c,cnt[x]); }
+                } else if(p!=tr.NIL){ bad++; printf("findnil PHANTOM t=%d x=%d\n",t,x); }
+            }
+            // (d) integration: hand findrb's pointer to deleterbramn; must decrement/free + keep tree valid
+            if(!cnt.empty()){
+                auto it=cnt.begin(); advance(it,rng()%cnt.size());
+                int x=it->first; auto* p=tr.findrb(x);
+                int before=(int)cnt[x];
+                bool freed=tr.deleterbramn(p);
+                if(freed!=(before==1)){ bad++; printf("findnil DELRET t=%d x=%d before=%d ret=%d\n",t,x,before,(int)freed); }
+                if(before==1) cnt.erase(x); else cnt[x]--;
+                if(!oracle_ok(tr,cnt)||!check_rb(&tr)){ bad++; printf("findnil DELSTATE t=%d x=%d\n",t,x); return 1; }
+            }
+        }
+        printf("findnil: %d/%d bad\n",bad,trials); return bad?1:0;
     }
 
     if(mode=="structure"){

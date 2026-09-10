@@ -16,9 +16,22 @@ public:
 		T v;
 		uint64_t c;
 	};
-private:
 	Node* NIL=new Node;
 	Node* rooot=NIL;
+	Node* findrb(T v){
+		Node* root=rooot;
+		while(root!=NIL){
+			if(cmp(v,root->v)){
+				root=root->l;
+			} else if(cmp(root->v,v)){
+				root=root->r;
+			} else{
+				return root;
+			}
+		}
+		return NIL;
+	}
+private:
 	bool (*cmp)(const T,const T);
 	Node* maken(Node* f,T v,uint64_t c=1,bool il=true){
 		Node* root=new Node;
@@ -224,19 +237,6 @@ private:
 		NIL->ir=false;
 		rooot=NIL;
 	}
-	Node* findrbi(T v){
-		Node* root=rooot;
-		while(root!=NIL){
-			if(cmp(v,root->v)){
-				root=root->l;
-			} else if(cmp(root->v,v)){
-				root=root->r;
-			} else{
-				return root;
-			}
-		}
-		return NIL;
-	}
 	Node* clonerbrecur(Node* root,Node* f,Node* NNIL) const{
 		if(root==NIL){
 			return NNIL;
@@ -258,7 +258,7 @@ public:
 	rbtreenil(bool (*cmp_func)(const T,const T)):cmp(cmp_func){
 		init();
 	}
-	~rbtreenil() {
+	~rbtreenil() noexcept {
 		destroyrb(rooot);
 		delete NIL;
 	}
@@ -274,11 +274,11 @@ public:
 		}
 		return *this;
 	}
-	rbtreenil(rbtreenil&& o):NIL(o.NIL),rooot(o.rooot),cmp(o.cmp){
+	rbtreenil(rbtreenil&& o) noexcept :NIL(o.NIL),rooot(o.rooot),cmp(o.cmp){
 		o.NIL=new Node;
 		o.init();
 	}
-	rbtreenil& operator=(rbtreenil&& o){
+	rbtreenil& operator=(rbtreenil&& o) noexcept {
 		if(this!=&o){
 			destroyrb(rooot);
 			delete NIL;
@@ -289,19 +289,6 @@ public:
 			o.init();
 		}
 		return *this;
-	}
-	Node* root(){
-		if(rooot==NIL){
-			return nullptr;
-		}
-		return rooot;
-	}
-	Node* findrb(T v){
-		Node* res=findrbi(v);
-		if(res==NIL){
-			return nullptr;
-		}
-		return res;
 	}
 	Node* insertrb(T v,uint64_t c=1){
 		if(rooot==NIL){
@@ -358,7 +345,7 @@ public:
 		return true;
 	}
 	bool deleterb(T v){
-		Node* root=findrbi(v);
+		Node* root=findrb(v);
 		if(root==NIL){
 			return false;
 		}
@@ -447,7 +434,7 @@ public:
 		return true;
 	}
 	bool deleterbram(T v){
-		Node* root=findrbi(v);
+		Node* root=findrb(v);
 		if(root==NIL){
 			return false;
 		}

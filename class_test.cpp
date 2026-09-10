@@ -13,7 +13,7 @@ int main() {
         cout<<x<<" ";
     }
     cout<<endl;
-    if(tree.findrb(5)!=nullptr) {
+    if(tree.findrb(5)!=tree.NIL) {
         cout<<"found 5"<<endl;
     }
     rbtreenil<int> treee=tree.clonerb();
